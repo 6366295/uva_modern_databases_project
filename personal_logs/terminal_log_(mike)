@@ -1,0 +1,23 @@
+sudo apt-get install python-virtualenv
+
+cd uva_modern_database_project
+
+virtualenv --python python3 env
+  
+env/bin/pip install numpy
+
+python-dev|python-devel was missing:
+    sudo apt-get install python3.4-dev
+
+env/bin/pip install numpy   
+env/bin/pip install asteval
+env/bin/pip install bistring
+env/bin/pip install msgpack-python
+env/bin/pip install python-snappy
+
+snappy C library was missing:
+    sudo apt-get install libsnappy-dev
+
+env/bin/pip install python-snappy
+env/bin/pip install sortedcontainers
+env/bin/pip install tornado
