@@ -30,7 +30,10 @@ class Tree(MutableMapping):
         split, creates a new root node with pointers to this node and the new
         node that resulted from splitting.
         """
-        pass
+        new_root_node = self.root._insert(key, value)
+        
+        if new_root_node != None:
+            self._create_root(self.root, new_root_node)
 
     def __delitem__(self, key):
         pass
@@ -53,7 +56,7 @@ class BaseNode(object):
         in the bucket of the current node. The higher keys are being stored in
         the bucket of the new node. Afterwards, the new node is being returned.
         """
-        other = self.__class__()
+        other = self.__class__(tree=self)
         size = int(len(self.bucket) / 2.0)
         
         for key in reversed(self.bucket):
@@ -72,9 +75,10 @@ class BaseNode(object):
         """
         self.bucket[key] = value
         
-        # TODO When to split?
-        if len(self.bucket) >= 4:
-            self._split()
+        if len(self.bucket) > 4:
+            return self._split()
+        
+        return None
 
 class Node(BaseNode):
     def __init__(self, *args, **kwargs):
@@ -164,3 +168,4 @@ class LazyNode(object):
 
         setattr(self.node, name, value)
 
+newBPTree = Tree()
