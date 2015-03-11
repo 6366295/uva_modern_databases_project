@@ -115,13 +115,18 @@ class Node(BaseNode):
         selected_node = self._select(key)
         
         if isinstance(selected_node, Leaf):
-            selected_node._insert(key, value)
+            new_node = selected_node._insert(key, value)
         
-            if len(selected_node.bucket) > 4:
-                new_node = selected_node._split()
-                self._insert(min(new_node.bucket), new_node)
+            if new_node != None:
+                self.bucket[min(new_node.bucket)] = new_node
+                
         else:
             selected_node._insert(key, value)
+            
+            if len(selected_node.bucket) > 4:
+                new_node = selected_node.split()
+                
+                self.bucket[min(new_node.bucket)] = new_node
         
         
 
@@ -193,7 +198,13 @@ class LazyNode(object):
         setattr(self.node, name, value)
 
 newBPTree = Tree()
-for i in range(1,8):
+for i in range(1,14):
     newBPTree.__setitem__(i,5)
     
 print(newBPTree.root.bucket)
+print(newBPTree.root.rest.bucket)
+print(newBPTree.root.bucket[3].bucket)
+print(newBPTree.root.bucket[5].bucket)
+print(newBPTree.root.bucket[7].bucket)
+print(newBPTree.root.bucket[9].bucket)
+print(newBPTree.root.bucket[11].bucket)
