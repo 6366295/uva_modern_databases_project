@@ -95,23 +95,14 @@ class Node(BaseNode):
         bucket_length = len(self.bucket)
         
         if key < self.bucket.iloc[0]:
-            if isinstance(self.bucket.rest, Leaf):
-                return self.bucket.rest
-            
-            return self.bucket.rest._select(key)
+            return self.rest
         
         for key_index in range(1, bucket_length):
             if key < self.bucket.iloc[key_index]:
-                if isinstance(self.bucket[key_index-1], Leaf):
-                    return self.bucket.rest
-            
-                return self.bucket[key_index-1]._select(key)
+                return self.bucket[self.bucket.iloc[key_index]-1]
             
         if key >= self.bucket.iloc[bucket_length-1]:
-            if isinstance(self.bucket[bucket_length-1], Leaf):
-                return self.bucket.rest
-            
-            return self.bucket[bucket_length-1]._select(key)
+            return self.bucket[self.bucket.iloc[bucket_length-1]]
         
 
     def _insert(self, key, value):
@@ -120,8 +111,19 @@ class Node(BaseNode):
         should belong to, and inserting the key and value into that back. If the
         node has been split, it inserts the key of the newly created node into
         the bucket of this node.
-        """
-        pass
+        """        
+        selected_node = self._select(key)
+        
+        if isinstance(selected_node, Leaf):
+            selected_node._insert(key, value)
+        
+            if len(selected_node.bucket) > 4:
+                new_node = selected_node._split()
+                self._insert(min(new_node.bucket), new_node)
+        else:
+            selected_node._insert(key, value)
+        
+        
 
 class Leaf(Mapping, BaseNode):
     def __getitem__(self, key):
@@ -191,15 +193,7 @@ class LazyNode(object):
         setattr(self.node, name, value)
 
 newBPTree = Tree()
-newBPTree.__setitem__(1,5)
+for i in range(1,8):
+    newBPTree.__setitem__(i,5)
+    
 print(newBPTree.root.bucket)
-newBPTree.__setitem__(2,5)
-print(newBPTree.root.bucket)
-newBPTree.__setitem__(3,5)
-print(newBPTree.root.bucket)
-newBPTree.__setitem__(4,5)
-print(newBPTree.root.bucket)
-newBPTree.__setitem__(5,5)
-print(newBPTree.root.bucket)
-print(newBPTree.root.rest.bucket)
-print(newBPTree.root.bucket[3].bucket)
