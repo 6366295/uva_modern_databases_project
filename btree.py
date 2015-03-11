@@ -30,10 +30,12 @@ class Tree(MutableMapping):
         split, creates a new root node with pointers to this node and the new
         node that resulted from splitting.
         """
-        new_root_node = self.root._insert(key, value)
+        new_node = self.root._insert(key, value)
         
-        if new_root_node != None:
-            self._create_root(self.root, new_root_node)
+        if new_node != None:
+            new_root = self._create_root(self.root, new_node)
+            self.root = new_root
+            print('split!')
 
     def __delitem__(self, key):
         pass
@@ -169,3 +171,15 @@ class LazyNode(object):
         setattr(self.node, name, value)
 
 newBPTree = Tree()
+newBPTree.__setitem__(1,5)
+print(newBPTree.root.bucket)
+newBPTree.__setitem__(2,5)
+print(newBPTree.root.bucket)
+newBPTree.__setitem__(3,5)
+print(newBPTree.root.bucket)
+newBPTree.__setitem__(4,5)
+print(newBPTree.root.bucket)
+newBPTree.__setitem__(5,5)
+print(newBPTree.root.bucket)
+print(newBPTree.root.rest.bucket)
+print(newBPTree.root.bucket[3].bucket)
