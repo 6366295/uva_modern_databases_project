@@ -92,7 +92,27 @@ class Node(BaseNode):
         """
         Selects the bucket the key should belong to.
         """
-        pass
+        bucket_length = len(self.bucket)
+        
+        if key < self.bucket.iloc[0]:
+            if isinstance(self.bucket.rest, Leaf):
+                return self.bucket.rest
+            
+            return self.bucket.rest._select(key)
+        
+        for key_index in range(1, bucket_length):
+            if key < self.bucket.iloc[key_index]:
+                if isinstance(self.bucket[key_index-1], Leaf):
+                    return self.bucket.rest
+            
+                return self.bucket[key_index-1]._select(key)
+            
+        if key >= self.bucket.iloc[bucket_length-1]:
+            if isinstance(self.bucket[bucket_length-1], Leaf):
+                return self.bucket.rest
+            
+            return self.bucket[bucket_length-1]._select(key)
+        
 
     def _insert(self, key, value):
         """
