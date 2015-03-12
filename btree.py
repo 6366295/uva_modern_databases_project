@@ -1,6 +1,8 @@
 from collections import Mapping, MutableMapping
 from sortedcontainers import SortedDict
 
+n = 4
+
 class Tree(MutableMapping):
     def __init__(self, max_size=1024):
         self.root = self._create_leaf(tree=self)
@@ -22,7 +24,19 @@ class Tree(MutableMapping):
         return root
 
     def __getitem__(self, key):
-        pass
+        """
+        Select node where the key belongs to until node is a leaf node.
+        Then check if key is in the node.
+        """
+        selected_node = self.root._select(key)
+        
+        while(isinstance(selected_node, Leaf)==False):
+            selected_node = selected_node._select(key)
+        
+        if key in selected_node.bucket:
+            print(selected_node.bucket[key])
+        else:
+            print('Key doesn\'t exist!')
 
     def __setitem__(self, key, value):
         """
@@ -35,9 +49,6 @@ class Tree(MutableMapping):
         if new_node != None:
             new_root = self._create_root(self.root, new_node)
             self.root = new_root
-            
-            
-            print('split!')
 
     def __delitem__(self, key):
         pass
@@ -60,14 +71,17 @@ class BaseNode(object):
         in the bucket of the current node. The higher keys are being stored in
         the bucket of the new node. Afterwards, the new node is being returned.
         """
-        other = self.__class__(tree=self)
-        size = int(len(self.bucket) / 2.0)
+        other = self.__class__(self.tree)
+        
+        split_size = int(len(self.bucket) / 2.0)
         
         for key in reversed(self.bucket):
             other.bucket[key] = self.bucket[key]
+            
             del self.bucket[key]
             
-            if len(self.bucket) <= size:
+            # Leave lower keys in own bucket
+            if len(self.bucket) <= split_size:
                 break
 
         return other
@@ -79,9 +93,11 @@ class BaseNode(object):
         """
         self.bucket[key] = value
         
-        if len(self.bucket) > 4:
+        # Return new node
+        if len(self.bucket) > n:
             return self._split()
         
+        # Return None if nothing has been split
         return None
 
 class Node(BaseNode):
@@ -96,6 +112,7 @@ class Node(BaseNode):
         """
         bucket_length = len(self.bucket)
         
+        # Corner case one, key lower than smallest key in bucket
         if key < self.bucket.iloc[0]:
             return self.rest
         
@@ -103,6 +120,7 @@ class Node(BaseNode):
             if key < self.bucket.iloc[key_index]:
                 return self.bucket[self.bucket.iloc[key_index-1]]
             
+        # Corner case two, key higher then biggest key in bucket
         if key >= self.bucket.iloc[bucket_length-1]:
             return self.bucket[self.bucket.iloc[bucket_length-1]]
         
@@ -119,13 +137,10 @@ class Node(BaseNode):
         new_node = selected_node._insert(key, value)
         
         if new_node != None:
-            if isinstance(new_node, Leaf):
-                self.bucket[min(new_node.bucket)] = new_node
-            else:
-                self.rest = new_node.bucket[min(new_node.bucket)]
-                del new_node.bucket[min(new_node.bucket)]
-                
-        if len(self.bucket) > 4:
+            self.bucket[min(new_node.bucket)] = new_node
+        
+        # Split when node is to big
+        if len(self.bucket) > n:
             new_node2 = self._split()
             return new_node2
                  
@@ -207,16 +222,13 @@ for i in range(1,14):
 print(newBPTree.root.bucket)
 
 print(newBPTree.root.rest.bucket)
-
-
-print(newBPTree.root.bucket[7].rest)
 print(newBPTree.root.bucket[7].bucket)
-'''
+
 print(newBPTree.root.rest.rest.bucket)
 print(newBPTree.root.rest.bucket[3].bucket)
 print(newBPTree.root.rest.bucket[5].bucket)
 print(newBPTree.root.bucket[7].bucket[7].bucket)
 print(newBPTree.root.bucket[7].bucket[9].bucket)
 print(newBPTree.root.bucket[7].bucket[11].bucket)
-'''
+
 #print(newBPTree.root.bucket[11].bucket)
