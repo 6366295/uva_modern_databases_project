@@ -99,7 +99,7 @@ class Node(BaseNode):
         
         for key_index in range(1, bucket_length):
             if key < self.bucket.iloc[key_index]:
-                return self.bucket[self.bucket.iloc[key_index]-1]
+                return self.bucket[self.bucket.iloc[key_index-1]]
             
         if key >= self.bucket.iloc[bucket_length-1]:
             return self.bucket[self.bucket.iloc[bucket_length-1]]
@@ -120,13 +120,14 @@ class Node(BaseNode):
             if new_node != None:
                 self.bucket[min(new_node.bucket)] = new_node
                 
+            if len(self.bucket) > 4:
+                new_node2 = self._split()
+                return new_node2
+                 
+            return None
         else:
+            print('node here')
             selected_node._insert(key, value)
-            
-            if len(selected_node.bucket) > 4:
-                new_node = selected_node.split()
-                
-                self.bucket[min(new_node.bucket)] = new_node
         
         
 
@@ -198,13 +199,20 @@ class LazyNode(object):
         setattr(self.node, name, value)
 
 newBPTree = Tree()
-for i in range(1,14):
+for i in range(1,16):
     newBPTree.__setitem__(i,5)
     
 print(newBPTree.root.bucket)
+'''
 print(newBPTree.root.rest.bucket)
-print(newBPTree.root.bucket[3].bucket)
-print(newBPTree.root.bucket[5].bucket)
+
 print(newBPTree.root.bucket[7].bucket)
-print(newBPTree.root.bucket[9].bucket)
-print(newBPTree.root.bucket[11].bucket)
+
+print(newBPTree.root.rest.rest.bucket)
+print(newBPTree.root.rest.bucket[3].bucket)
+print(newBPTree.root.rest.bucket[5].bucket)
+print(newBPTree.root.bucket[7].bucket[7].bucket)
+print(newBPTree.root.bucket[7].bucket[9].bucket)
+print(newBPTree.root.bucket[7].bucket[11].bucket)
+'''
+#print(newBPTree.root.bucket[11].bucket)
