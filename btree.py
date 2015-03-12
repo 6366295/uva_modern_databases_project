@@ -35,6 +35,8 @@ class Tree(MutableMapping):
         if new_node != None:
             new_root = self._create_root(self.root, new_node)
             self.root = new_root
+            
+            
             print('split!')
 
     def __delitem__(self, key):
@@ -114,20 +116,16 @@ class Node(BaseNode):
         """        
         selected_node = self._select(key)
         
-        if isinstance(selected_node, Leaf):
-            new_node = selected_node._insert(key, value)
+        new_node = selected_node._insert(key, value)
         
-            if new_node != None:
-                self.bucket[min(new_node.bucket)] = new_node
+        if new_node != None:
+            self.bucket[min(new_node.bucket)] = new_node
                 
-            if len(self.bucket) > 4:
-                new_node2 = self._split()
-                return new_node2
+        if len(self.bucket) > 4:
+            new_node2 = self._split()
+            return new_node2
                  
-            return None
-        else:
-            print('node here')
-            selected_node._insert(key, value)
+        return None
         
         
 
@@ -199,15 +197,14 @@ class LazyNode(object):
         setattr(self.node, name, value)
 
 newBPTree = Tree()
-for i in range(1,16):
+for i in range(1,14):
     newBPTree.__setitem__(i,5)
     
 print(newBPTree.root.bucket)
-'''
 print(newBPTree.root.rest.bucket)
 
-print(newBPTree.root.bucket[7].bucket)
-
+print(newBPTree.root.bucket[7].rest)
+'''
 print(newBPTree.root.rest.rest.bucket)
 print(newBPTree.root.rest.bucket[3].bucket)
 print(newBPTree.root.rest.bucket[5].bucket)
