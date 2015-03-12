@@ -119,7 +119,11 @@ class Node(BaseNode):
         new_node = selected_node._insert(key, value)
         
         if new_node != None:
-            self.bucket[min(new_node.bucket)] = new_node
+            if isinstance(new_node, Leaf):
+                self.bucket[min(new_node.bucket)] = new_node
+            else:
+                self.rest = new_node.bucket[min(new_node.bucket)]
+                del new_node.bucket[min(new_node.bucket)]
                 
         if len(self.bucket) > 4:
             new_node2 = self._split()
@@ -201,9 +205,12 @@ for i in range(1,14):
     newBPTree.__setitem__(i,5)
     
 print(newBPTree.root.bucket)
+
 print(newBPTree.root.rest.bucket)
 
+
 print(newBPTree.root.bucket[7].rest)
+print(newBPTree.root.bucket[7].bucket)
 '''
 print(newBPTree.root.rest.rest.bucket)
 print(newBPTree.root.rest.bucket[3].bucket)
