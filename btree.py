@@ -1,7 +1,11 @@
+from encode1 import encode
+from encode1 import decode
+
 from collections import Mapping, MutableMapping
 from sortedcontainers import SortedDict
 
 n = 4
+offset = 0
 
 class Tree(MutableMapping):
     def __init__(self, max_size=1024):
@@ -10,7 +14,7 @@ class Tree(MutableMapping):
 
     @staticmethod
     def _create_leaf(*args, **kwargs):
-        return Leaf(*args, **kwargs)
+        return LazyNode(node=Leaf(*args, **kwargs))
 
     @staticmethod
     def _create_node(*args, **kwargs):
@@ -20,14 +24,28 @@ class Tree(MutableMapping):
         root = self._create_node(tree=self)
         root.rest = lhs
         root.bucket[min(rhs.bucket)] = rhs
+        root.changed = True
         
-        return root
+        return LazyNode(node=root)
+    
+    def _commit(self):
+        offset = self.root._commit()
+        
+        file_obj = open("doc_store", "ba")
+        
+        file_obj.write(encode(offset))
+        
+        file_obj.close()
+        
+        self.root._changed = False
 
     def __getitem__(self, key):
         """
         Select node where the key belongs to until node is a leaf node.
         Then check if key is in the node.
         """
+
+        
         selected_node = self.root._select(key)
         
         while(isinstance(selected_node, Leaf)==False):
@@ -63,6 +81,7 @@ class BaseNode(object):
     def __init__(self, tree):
         self.tree = tree
         self.bucket = SortedDict()
+        self.changed = False      
 
     def _split(self):
         """
@@ -84,7 +103,7 @@ class BaseNode(object):
             if len(self.bucket) <= split_size:
                 break
 
-        return other
+        return LazyNode(node=other)
 
     def _insert(self, key, value):
         """
@@ -93,12 +112,29 @@ class BaseNode(object):
         """
         self.bucket[key] = value
         
+        self.changed = True
+        
         # Return new node
         if len(self.bucket) > n:
-            return self._split()
+            new_node = self._split()
+            new_node._changed = True
+            return new_node
         
         # Return None if nothing has been split
         return None
+    
+    def _get_data(self):
+        data = SortedDict()
+        data['bucket'] = self.bucket
+        data['node'] = 'leaf'
+        
+        return encode(data)
+    
+    def _commit(self):
+        encoded_data = self._get_data()
+        #print(encoded_data)
+        #print(decode(encoded_data))
+        return encoded_data
 
 class Node(BaseNode):
     def __init__(self, *args, **kwargs):
@@ -138,16 +174,38 @@ class Node(BaseNode):
         
         if new_node != None:
             self.bucket[min(new_node.bucket)] = new_node
+            self.changed = True
         
         # Split when node is to big
         if len(self.bucket) > n:
             new_node2 = self._split()
+            
+            new_node2._changed = True
+            
             return new_node2
                  
         return None
+    
+    def _get_data(self):
+        data = SortedDict()
+        data['bucket'] = self.bucket
+        if self.rest != None:
+            data['rest'] = self.rest
+        data['node'] = 'node'
         
+        return encode(data)
+    
+    def _commit(self):
+        if self.rest != None:
+            offset = self.rest._commit()
+            self.rest = offset
         
-
+        for key in self.bucket:
+            offset = self.bucket[key]._commit()
+            self.bucket[key] = offset
+        
+        return self._get_data()
+        
 class Leaf(Mapping, BaseNode):
     def __getitem__(self, key):
         pass
@@ -177,7 +235,7 @@ class LazyNode(object):
         if self.node is None:
             return False
 
-        return self.node.changed
+        return self.node._changed
 
     def _commit(self):
         """
@@ -185,22 +243,45 @@ class LazyNode(object):
         """
         if not self.changed:
             return
-
-        self.node._commit()
-        self.changed = False
+        data = self.node._commit()
+        
+        file_obj = open("doc_store", "ba")
+        
+        offset = file_obj.tell()
+        print(offset)
+        
+        file_obj.write(data + encode('\n'))
+        
+        file_obj.close()
+        
+        self._changed = False
+        
+        return offset
 
     def _load(self):
         """
         Load the node from disk.
         """
-        pass
+        data = None
+        
+        file_obj = open("doc_store", "br")
+        file_obj.seek(self.offset, 0)
+        i = 1
+        while True:
+            try:
+                data = decode(file_obj.read(i))
+            except:
+                i += 1
+        file_obj.close()
+         
+        print(data)
 
     def __getattr__(self, name):
         """
         Loads the node if it hasn't been loaded yet, and dispatches the request
         to the node.
         """
-        if not self.node:
+        if self.node is None:
             self.node = self._load()
         
         return getattr(self.node, name)
@@ -215,7 +296,40 @@ class LazyNode(object):
 
         setattr(self.node, name, value)
 
+
 newBPTree = Tree()
+
+print(newBPTree.root.changed)
+
+for i in range(1,6):
+    newBPTree.__setitem__(i,5)
+    
+print(newBPTree.root.changed)
+
+newBPTree._commit()
+
+print(newBPTree.root.changed)
+            
+            
+'''         
+        f = open('doc_store', 'br')
+        offset = 0
+        i = -1
+        while True:
+            try:
+                f.seek(i, 2)
+                offset = decode(f.read())
+                break
+            except:
+                i -= 1
+        f.close()
+            
+            
+        print(offset)
+        
+        LazyNode(offset)
+'''
+'''
 for i in range(1,14):
     newBPTree.__setitem__(i,5)
     
@@ -232,3 +346,4 @@ print(newBPTree.root.bucket[7].bucket[9].bucket)
 print(newBPTree.root.bucket[7].bucket[11].bucket)
 
 #print(newBPTree.root.bucket[11].bucket)
+'''
