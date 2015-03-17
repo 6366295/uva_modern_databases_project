@@ -1,9 +1,10 @@
 from yamr import Database, Chunk, Tree
+import json
 
 import tornado.ioloop
 import tornado.web
 
-class DocumentsHandler(tornado.web.RequestHandler):
+class DocumentsHandler(tornado.web.RequestHandler):    
     def get(self):
         db = Database('test.db', max_size=4)
         
@@ -12,8 +13,21 @@ class DocumentsHandler(tornado.web.RequestHandler):
             
         db.close()
             
+    def post(self):
+        print(self.request.body)
+            
     def put(self):
-        return
+        data = self.request.body
+        data_json = json.loads(data.decode("utf-8"))
+        
+        db = Database('test.db', max_size=4)
+        
+        for k, v in data_json.items():
+            db[int(k)] = v
+            
+        db.commit()
+        
+        db.close()
         
 application = tornado.web.Application([
     (r"/documents", DocumentsHandler),
