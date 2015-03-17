@@ -1,0 +1,5 @@
+curl -i http://localhost:8888/documents
+curl -i PUT http://localhost:8888/documents -d '{"1":"hey", "2":"you"}'
+
+curl -i http://localhost:8888/documents/9
+curl -i -X PUT http://localhost:8888/documents/9 -d 'new'
