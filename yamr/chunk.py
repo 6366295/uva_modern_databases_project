@@ -74,11 +74,14 @@ class Chunk(object):
         self.checksum = crc32(data)
         self.parsed = True
 
+        self.f.seek(0, SEEK_END)
+        self.offset = self.f.tell()
         data = self.struct.pack(self._id, self.size, self.checksum) + data
         self.f.write(data)
-        self.f.seek(-len(data), SEEK_CUR)
-        self.offset = self.f.tell()
 
     def next(self):
         self.seek(self.size, SEEK_CUR)
+    
+    def close(self):
+        self.f.close()
 

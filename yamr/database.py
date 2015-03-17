@@ -11,39 +11,45 @@ from msgpack import packb, unpackb
 from .btree import LazyNode, Tree
 from .chunk import Chunk, ChunkId
 
+import sys
+
 class Database(MutableMapping):
     def __init__(self, path, max_size=1024):
-        self.chunk = Chunk(open(path, 'ab+'))
-        
+        data = None
         offset = None
         size = 0
-        chunk = Chunk(open(path, 'rb+'))
 
         try:
-            while chunk.verify():
-                if chunk.get_id() == ChunkId.Commit:
-                    offset = chunk.tell()
-                    print(chunk.get_size())
-                    chunk.next()
-                    size = chunk.tell()
-                else:
-                    chunk.next()
-        except EOFError:
+            with open(path, 'rb+') as f:
+                chunk = Chunk(f)
+
+                try:
+                    while chunk.verify():
+                        if chunk.get_id() == ChunkId.Commit:
+                            offset = chunk.tell()
+                            chunk.next()
+                            size = chunk.tell()
+                        else:
+                            chunk.next()
+                except EOFError:
+                    pass
+
+                chunk.f.truncate(size)
+
+                if offset is not None:
+                    chunk.seek(offset)
+                    data = unpackb(chunk.read())
+        except FileNotFoundError:
             pass
 
-        print(offset)
-        print(size)
+        self.chunk = Chunk(open(path, 'ab+'))
 
-        chunk.f.truncate(size)
-
-        if offset is None:
+        if data is None:
             self.tree = Tree(self.chunk, max_size)
-        else:
-            chunk.seek(offset)
-            data = unpackb(chunk.read())
+            return 
 
-            self.tree = Tree(self.chunk, data[b'max_size'])
-            self.tree.root = LazyNode(offset=data[b'documents'], tree=self.tree)
+        self.tree = Tree(self.chunk, data[b'max_size'])
+        self.tree.root = LazyNode(offset=data[b'documents'], tree=self.tree)
 
     def commit(self):
         self.tree.commit()
@@ -54,6 +60,9 @@ class Database(MutableMapping):
         })
 
         self.tree.chunk.write(ChunkId.Commit, data)
+
+    def close(self):
+        self.chunk.close()
 
     def __getitem__(self, key):
         return self.tree[key]
