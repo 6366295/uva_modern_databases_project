@@ -5,15 +5,6 @@ import json
 import tornado.ioloop
 import tornado.web
 
-def emit(key, value):
-    db = Database('emit.db', max_size=4)
-    
-    db[key] = value
-    
-    db.commit()
-    
-    db.close()
-
 class DocumentsHandler(tornado.web.RequestHandler):    
     def get(self):
         db = Database('test.db', max_size=4)
@@ -73,14 +64,21 @@ class SingleDocumentHandler(tornado.web.RequestHandler):
 class MapreduceHandler(tornado.web.RequestHandler):
     def get(self):        
         mapreduce_script = Script()
+        mapreduce_script.add_file('emit.py')
         mapreduce_script.add_file('map.py')
         
         db = Database('test.db', max_size=4)
+        temp_emit_db = Database('emit.db', max_size=4)
         
         for k, v in db.items():
-            mapreduce_script.invoke('b', key=k, value=v)
+            map_key, map_value = mapreduce_script.invoke('dbMap', doc=v)
             
+            temp_emit_db[map_key] = map_value
+            
+        temp_emit_db.commit()
+        
         db.close()
+        temp_emit_db.close()
         
 application = tornado.web.Application([
     (r"/documents", DocumentsHandler),

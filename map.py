@@ -1,5 +1,6 @@
-def b(key, value):
-    emit(key, value)
+def dbMap(doc):
     
-def c():
+    emit(doc, 1)
+    
+def dbReduce():
     print(2)
