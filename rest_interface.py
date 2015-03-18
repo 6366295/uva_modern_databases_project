@@ -45,6 +45,19 @@ class SingleDocumentHandler(tornado.web.RequestHandler):
             
         db.close()
         
+        
+    def post(self):
+        data = self.request.body
+	jsondata = json.loads(data.decode("utf-8"))
+	jsondatalength = len(jsondata)
+
+	db = Database('test.db', max_size=4)
+	key = list(jsondata.keys())[jsondatalength-1] 
+	value = list(jsondata.values())[jsondatalength-1]
+	db[int(key)] = value
+	db.close()
+	
+	
     def put(self, doc_id):
         data = self.request.body
         
