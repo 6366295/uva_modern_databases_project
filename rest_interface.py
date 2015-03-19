@@ -95,21 +95,22 @@ class MapHandler(tornado.web.RequestHandler):
         
 class ReduceHandler(tornado.web.RequestHandler):
     def get(self):
+        os.remove('reduce.db')
+        
         mapreduce_script = Script()
-        mapreduce_script.add_file('reduce.py')
+        mapreduce_script.add_file('map.py')
         emit_db = Database('emit.db', max_size=4)
         reduce_db = Database('reduce.db', max_size=4)
-        #i = 10
-        for k, v in emit_db.items():
-           sumvalue = mapreduce_script.invoke('dbReduce', value = v)
 
-           #i = random.randint(0,9)
-           reduce_db[k] = int(sumvalue)+i
+        for k, v in emit_db.items():
+           sumvalue = mapreduce_script.invoke('dbReduce', key = k, value = v)
+
+           reduce_db[k] = int(sumvalue)
 
         reduce_db.commit()
         genexp = ((k, reduce_db[k]) for k in sorted(reduce_db, key=reduce_db.get, reverse=True))
         for k, v in genexp:
-            print(k.decode("utf-8") + ' : ' + str(v))  
+            print(k.decode("utf-8") + ' : ' + str(v) + '\n')  
 
         reduce_db.close()
         emit_db.close()
