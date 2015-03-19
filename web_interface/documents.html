@@ -1,0 +1,12 @@
+<html>
+   <head>
+      <title>{{ title }}</title>
+   </head>
+   <body>
+     <ul>
+       {% for k, v in db.items() %}
+         <li>{{ k }}: {{ v }}</li>
+       {% end %}
+     </ul>
+   </body>
+ </html>

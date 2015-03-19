@@ -11,7 +11,7 @@ class DocumentsHandler(tornado.web.RequestHandler):
         db = Database('test.db', max_size=4)
         
         for k, v in db.items():
-            self.write('{}: {}'.format(k, v))
+            self.write('{}: {}'.format(k, v.decode('utf-8')) + '\n')
             
         db.close()
             
@@ -46,7 +46,7 @@ class SingleDocumentHandler(tornado.web.RequestHandler):
     def get(self, doc_id):
         db = Database('test.db', max_size=4)
         
-        self.write(db[int(doc_id)])
+        self.write(str(db[int(doc_id)].decode('utf-8')) + '\n')
             
         db.close()
         
@@ -93,11 +93,44 @@ class MapHandler(tornado.web.RequestHandler):
         db.close()
         temp_emit_db.close()
         
+class ReduceHandler(tornado.web.RequestHandler):
+    def get(self):               
+        mapreduce_script = Script()
+        
+        mapreduce_script.add_file('emit.py')
+        mapreduce_script.add_file('map.py')
+        
+        temp_emit_db = Database('emit.db', max_size=4)
+        temp_reduce_db = Database('reduce.db', max_size=4)
+        
+        for k, v in temp_emit_db.items():
+            reduced_value = mapreduce_script.invoke('dbReduce', key=k, values=v)
+            
+            temp_reduce_db[k] = int(reduced_value)
+            
+        temp_reduce_db.commit()
+        
+        temp_emit_db.close()
+        temp_reduce_db.close()
+        
+        
+class WebDocumentsHandler(tornado.web.RequestHandler):    
+    def get_template_path(self):
+        return 'web_interface'
+    
+    def get(self):
+        db = Database('test.db', max_size=4)
+        
+        self.render("documents.html", title="My title", db=db)
+            
+        db.close()
+        
 application = tornado.web.Application([
     (r"/documents", DocumentsHandler),
     (r"/document/([0-9]+)", SingleDocumentHandler),
     (r"/documents/map", MapHandler),
-    (r"/documents/reduce", ReduceHandler)
+    (r"/documents/reduce", ReduceHandler),
+    (r"/web/documents", WebDocumentsHandler)
 ])
 
 if __name__ == "__main__":
