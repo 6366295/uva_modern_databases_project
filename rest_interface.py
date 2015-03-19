@@ -94,24 +94,25 @@ class MapHandler(tornado.web.RequestHandler):
         temp_emit_db.close()
         
 class ReduceHandler(tornado.web.RequestHandler):
-    def get(self):               
+    def get(self):
         mapreduce_script = Script()
-        
-        mapreduce_script.add_file('emit.py')
-        mapreduce_script.add_file('map.py')
-        
-        temp_emit_db = Database('emit.db', max_size=4)
-        temp_reduce_db = Database('reduce.db', max_size=4)
-        
-        for k, v in temp_emit_db.items():
-            reduced_value = mapreduce_script.invoke('dbReduce', key=k, values=v)
-            
-            temp_reduce_db[k] = int(reduced_value)
-            
-        temp_reduce_db.commit()
-        
-        temp_emit_db.close()
-        temp_reduce_db.close()
+        mapreduce_script.add_file('reduce.py')
+        emit_db = Database('emit.db', max_size=4)
+        reduce_db = Database('reduce.db', max_size=4)
+        #i = 10
+        for k, v in emit_db.items():
+           sumvalue = mapreduce_script.invoke('dbReduce', value = v)
+
+           #i = random.randint(0,9)
+           reduce_db[k] = int(sumvalue)+i
+
+        reduce_db.commit()
+        genexp = ((k, reduce_db[k]) for k in sorted(reduce_db, key=reduce_db.get, reverse=True))
+        for k, v in genexp:
+            print(k.decode("utf-8") + ' : ' + str(v))  
+
+        reduce_db.close()
+        emit_db.close()
         
         
 class WebDocumentsHandler(tornado.web.RequestHandler):    
