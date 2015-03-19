@@ -1,6 +1,7 @@
 from yamr import Database, Chunk, Tree
 from mapreduce_wrapper import Script
 import json
+import os
 
 import tornado.ioloop
 import tornado.web
@@ -61,8 +62,10 @@ class SingleDocumentHandler(tornado.web.RequestHandler):
         
         db.close()
         
-class MapreduceHandler(tornado.web.RequestHandler):
+class MapHandler(tornado.web.RequestHandler):
     def get(self):        
+        os.remove('emit.db')
+        
         mapreduce_script = Script()
         
         mapreduce_script.add_file('emit.py')
@@ -93,7 +96,8 @@ class MapreduceHandler(tornado.web.RequestHandler):
 application = tornado.web.Application([
     (r"/documents", DocumentsHandler),
     (r"/document/([0-9]+)", SingleDocumentHandler),
-    (r"/documents/mapreduce", MapreduceHandler)
+    (r"/documents/map", MapHandler),
+    (r"/documents/reduce", ReduceHandler)
 ])
 
 if __name__ == "__main__":
