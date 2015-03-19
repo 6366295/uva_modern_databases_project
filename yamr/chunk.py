@@ -79,6 +79,9 @@ class Chunk(object):
         data = self.struct.pack(self._id, self.size, self.checksum) + data
         self.f.write(data)
 
+    def flush(self):
+        self.f.flush()
+
     def next(self):
         self.seek(self.size, SEEK_CUR)
     

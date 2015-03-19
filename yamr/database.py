@@ -59,7 +59,8 @@ class Database(MutableMapping):
             'max_size': self.tree.max_size,
         })
 
-        self.tree.chunk.write(ChunkId.Commit, data)
+        self.chunk.write(ChunkId.Commit, data)
+        self.chunk.flush()
 
     def close(self):
         self.chunk.close()

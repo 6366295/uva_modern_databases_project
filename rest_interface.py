@@ -22,8 +22,10 @@ class DocumentsHandler(tornado.web.RequestHandler):
         jsondatalength = len(jsondata)
 
         db = Database('test.db', max_size=4)
-        key = list(jsondata.keys())[jsondatalength-1] 
+        
+        key = list(jsondata.keys())[jsondatalength-1]
         value = list(jsondata.values())[jsondatalength-1]
+        
         db[int(key)] = value
 
         db.commit()
@@ -119,13 +121,14 @@ class ReduceHandler(tornado.web.RequestHandler):
         
         
 class WebDocumentsHandler(tornado.web.RequestHandler):    
+    # Override function to find html files in web_interface folder
     def get_template_path(self):
         return 'web_interface'
     
     def get(self):
         db = Database('test.db', max_size=4)
         
-        self.render("documents.html", title="My title", db=db)
+        self.render("documents.html", title="All documents in database", db=db)
             
         db.close()
         
