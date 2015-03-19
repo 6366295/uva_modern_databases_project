@@ -64,16 +64,26 @@ class SingleDocumentHandler(tornado.web.RequestHandler):
 class MapreduceHandler(tornado.web.RequestHandler):
     def get(self):        
         mapreduce_script = Script()
+        
         mapreduce_script.add_file('emit.py')
         mapreduce_script.add_file('map.py')
+        mapreduce_script.symtable['emit_dict'] = {}
         
         db = Database('test.db', max_size=4)
         temp_emit_db = Database('emit.db', max_size=4)
         
-        for k, v in db.items():
-            map_key, map_value = mapreduce_script.invoke('dbMap', doc=v)
+        for v in db.values():
+            mapreduce_script.invoke('dbMap', doc=v)
             
-            temp_emit_db[map_key] = map_value
+            emit_dict = mapreduce_script.symtable['emit_dict']
+            
+            for k2, v2 in emit_dict.items():
+                if k2 in temp_emit_db:
+                    temp_emit_db[k2].extend(v2)
+                else:
+                    temp_emit_db[k2] = v2
+                    
+            mapreduce_script.symtable['emit_dict'] = {}
             
         temp_emit_db.commit()
         
