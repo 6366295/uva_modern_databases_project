@@ -11,12 +11,13 @@ class DocumentsHandler(tornado.web.RequestHandler):
         db = Database('test.db', max_size=4)
         
         for k, v in db.items():
-            self.write('{}: {}'.format(k, v.decode('utf-8')) + '\n')
+            self.write(str(k) + ': ' + str(v.decode('utf-8')) + '\n')
             
         db.close()
             
     def post(self):
         data = self.request.body
+        
         jsondata = json.loads(data.decode("utf-8"))
         jsondatalength = len(jsondata)
 
@@ -103,11 +104,12 @@ class ReduceHandler(tornado.web.RequestHandler):
         reduce_db = Database('reduce.db', max_size=4)
 
         for k, v in emit_db.items():
-           sumvalue = mapreduce_script.invoke('dbReduce', key = k, value = v)
+           reduced_value = mapreduce_script.invoke('dbReduce', key=k, values=v)
 
-           reduce_db[k] = int(sumvalue)
+           reduce_db[k] = str(reduced_value)
 
         reduce_db.commit()
+        
         genexp = ((k, reduce_db[k]) for k in sorted(reduce_db, key=reduce_db.get, reverse=True))
         for k, v in genexp:
             print(k.decode("utf-8") + ' : ' + str(v) + '\n')  
