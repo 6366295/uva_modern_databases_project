@@ -1,3 +1,14 @@
+'''
+  Name: Hidde Hensel
+  Studentnr: 6379176
+  
+  Name: Mike Trieu
+  Studentnr: 6366295 / 10105093
+  
+  REST-interface implementation using python Tornado framework for a document
+    store database.
+'''
+
 from yamr import Database, Chunk, Tree
 from mapreduce_wrapper import Script
 import json
@@ -6,7 +17,9 @@ import os
 import tornado.ioloop
 import tornado.web
 
+# Operations on the entire collection of documents
 class DocumentsHandler(tornado.web.RequestHandler):    
+    # GET: Retrieves list of all key, value pairs in the database
     def get(self):
         db = Database('test.db', max_size=4)
         
@@ -15,6 +28,7 @@ class DocumentsHandler(tornado.web.RequestHandler):
             
         db.close()
             
+    # POST: Creates new document
     def post(self):
         data = self.request.body
         
@@ -32,7 +46,11 @@ class DocumentsHandler(tornado.web.RequestHandler):
 
         db.close()
             
+    # PUT: Replace entire collection of documents with another
     def put(self):
+        # Delete database, since the entire collection will be replaced
+        os.remove('test.db')
+        
         data = self.request.body
         data_json = json.loads(data.decode("utf-8"))
         
@@ -44,8 +62,10 @@ class DocumentsHandler(tornado.web.RequestHandler):
         db.commit()
         
         db.close()
-        
+
+# Operations on elements
 class SingleDocumentHandler(tornado.web.RequestHandler):    
+    # GET: Retrieve a document
     def get(self, doc_id):
         db = Database('test.db', max_size=4)
         
@@ -53,13 +73,18 @@ class SingleDocumentHandler(tornado.web.RequestHandler):
             
         db.close()
         
-        
+    # PUT: Update existing document
     def put(self, doc_id):
+        # data get a string from body
         data = self.request.body
         
         db = Database('test.db', max_size=4)
         
-        db[int(doc_id)] = data.decode("utf-8")
+        # Update document, if it exists
+        if int(doc_id) in db:
+            db[int(doc_id)] = data.decode("utf-8")
+        else:
+            self.write('Document does not exist!' + '\n')
             
         db.commit()
         
@@ -114,7 +139,7 @@ class ReduceHandler(tornado.web.RequestHandler):
         
         genexp = ((k, reduce_db[k]) for k in sorted(reduce_db, key=reduce_db.get, reverse=True))
         for k, v in genexp:
-            print(k.decode("utf-8") + ' : ' + str(v) + '\n')  
+            self.write(k.decode("utf-8") + ' : ' + str(v) + '\n')  
 
         reduce_db.close()
         emit_db.close()
