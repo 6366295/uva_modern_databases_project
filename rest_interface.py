@@ -32,14 +32,11 @@ class DocumentsHandler(tornado.web.RequestHandler):
     def post(self):
         data = self.request.body
         
-        jsondata = json.loads(data.decode("utf-8"))
-        jsondatalength = len(jsondata)
+        datadecode = data.decode("utf-8")
 
         db = Database('test.db', max_size=4)
-        
-        key = list(jsondata.keys())[jsondatalength-1]
-        value = list(jsondata.values())[jsondatalength-1]
-        
+        key = max(db.keys(), key=int) + 1
+        value = datadecode
         db[int(key)] = value
 
         db.commit()
