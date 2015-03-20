@@ -31,15 +31,19 @@ class DocumentsHandler(tornado.web.RequestHandler):
     # POST: Creates new document
     def post(self):
         data = self.request.body
-        
-        datadecode = data.decode("utf-8")
+        value = data.decode("utf-8")
 
         db = Database('test.db', max_size=4)
+        
+        # Get largest key in database + 1, because this one should always be
+        #   empty
         key = max(db.keys(), key=int) + 1
-        value = datadecode
+        
         db[int(key)] = value
 
         db.commit()
+        
+        self.write('Document inserted in key ' + str(key) + '\n')
 
         db.close()
             
@@ -74,12 +78,15 @@ class SingleDocumentHandler(tornado.web.RequestHandler):
     def put(self, doc_id):
         # data get a string from body
         data = self.request.body
+        decoded_data = data.decode("utf-8")
         
         db = Database('test.db', max_size=4)
         
         # Update document, if it exists
         if int(doc_id) in db:
-            db[int(doc_id)] = data.decode("utf-8")
+            db[int(doc_id)] = decoded_data
+            self.write('Updated document in key value: ' +\
+                str(doc_id) + '\n')
         else:
             self.write('Document does not exist!' + '\n')
             
@@ -87,8 +94,9 @@ class SingleDocumentHandler(tornado.web.RequestHandler):
         
         db.close()
         
+# Applies map query to all documents
 class MapHandler(tornado.web.RequestHandler):
-    def get(self):        
+    def get(self):
         os.remove('emit.db')
         
         mapreduce_script = Script()
@@ -97,20 +105,26 @@ class MapHandler(tornado.web.RequestHandler):
         mapreduce_script.add_file('map.py')
         mapreduce_script.symtable['emit_dict'] = {}
         
+        # Store temporary results in emit.db
         db = Database('test.db', max_size=4)
         temp_emit_db = Database('emit.db', max_size=4)
         
+        # Forward each document to the map query
         for v in db.values():
             mapreduce_script.invoke('dbMap', doc=v)
             
+            # Every time emit function is called in the map query, a key and
+            #   value is stored in emit_dict
             emit_dict = mapreduce_script.symtable['emit_dict']
             
+            # Store in temporary database and group values with keys
             for k2, v2 in emit_dict.items():
                 if k2 in temp_emit_db:
                     temp_emit_db[k2].extend(v2)
                 else:
                     temp_emit_db[k2] = v2
                     
+            # Empty emit_dict for next document
             mapreduce_script.symtable['emit_dict'] = {}
             
         temp_emit_db.commit()
@@ -118,22 +132,28 @@ class MapHandler(tornado.web.RequestHandler):
         db.close()
         temp_emit_db.close()
         
+# Applies reduce query to result of map querie
 class ReduceHandler(tornado.web.RequestHandler):
     def get(self):
         os.remove('reduce.db')
         
         mapreduce_script = Script()
         mapreduce_script.add_file('map.py')
+        
+        # Use temporary reduce.db to store the reduced results
         emit_db = Database('emit.db', max_size=4)
         reduce_db = Database('reduce.db', max_size=4)
 
+        # Forward every key value pair to the map query
         for k, v in emit_db.items():
-           reduced_value = mapreduce_script.invoke('dbReduce', key=k, values=v)
+            reduced_value = mapreduce_script.invoke('dbReduce', key=k, values=v)
 
-           reduce_db[k] = str(reduced_value)
+            # Store key and reduce value in reduce.db
+            reduce_db[k] = str(reduced_value)
 
         reduce_db.commit()
         
+        # Write/print keys and reduced results
         genexp = ((k, reduce_db[k]) for k in sorted(reduce_db, key=reduce_db.get, reverse=True))
         for k, v in genexp:
             self.write(k.decode("utf-8") + ' : ' + str(v) + '\n')  
