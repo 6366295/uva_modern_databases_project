@@ -161,7 +161,14 @@ class ReduceHandler(tornado.web.RequestHandler):
         reduce_db.close()
         emit_db.close()
         
+class CompactionHandler(tornado.web.RequestHandler):    
+    def get(self):
+        db = Database('test.db', max_size=4)
         
+        db.compaction()
+            
+        db.close()
+  
 class WebDocumentsHandler(tornado.web.RequestHandler):    
     # Override function to find html files in web_interface folder
     def get_template_path(self):
@@ -179,6 +186,7 @@ application = tornado.web.Application([
     (r"/document/([0-9]+)", SingleDocumentHandler),
     (r"/documents/map", MapHandler),
     (r"/documents/reduce", ReduceHandler),
+    (r"/documents/compaction", CompactionHandler),
     (r"/web/documents", WebDocumentsHandler)
 ])
 

@@ -12,6 +12,7 @@ from .btree import LazyNode, Tree
 from .chunk import Chunk, ChunkId
 
 import sys
+import os
 
 class Database(MutableMapping):
     def __init__(self, path, max_size=1024):
@@ -79,4 +80,25 @@ class Database(MutableMapping):
 
     def __iter__(self):
         yield from self.tree
+        
+    def compaction(self):
+        leaf_list = self.__iter__()
+        
+        new_chunk = Chunk(open('temp.db', 'ab+'))
+        new_tree = Tree(new_chunk, self.tree.max_size)
+        
+        while 1:
+            try:
+                key = leaf_list.__next__()
+                value = self.tree.__getitem__(key)
+                new_tree.__setitem__(key, value)
+            except:
+                break
+        
+        self.tree = new_tree
+        
+        self.commit()
+        
+        os.rename('temp.db', 'test.db')
+        
 
