@@ -5,6 +5,16 @@ Reference implementation of the database abstraction for yet another map-reduce
 database (yamr-db).
 """
 
+'''
+  Name: Hidde Hensel
+  Studentnr: 6379176
+  
+  Name: Mike Trieu
+  Studentnr: 6366295 / 10105093
+  
+  Implemented the compaction function to compact the database
+'''
+
 from collections import MutableMapping
 from msgpack import packb, unpackb
 
@@ -81,24 +91,31 @@ class Database(MutableMapping):
     def __iter__(self):
         yield from self.tree
         
+    # Compact database
     def compaction(self):
         leaf_list = self.__iter__()
         
-        new_chunk = Chunk(open('temp.db', 'ab+'))
-        new_tree = Tree(new_chunk, self.tree.max_size)
+        # Open temporary database
+        temp_chunk = Chunk(open('temp.db', 'ab+'))
         
+        # Create temporary tree
+        temp_tree = Tree(temp_chunk, self.tree.max_size)
+        
+        # Use iterator to get key values, store key and value in temporary
+        #   tree
         while 1:
             try:
                 key = leaf_list.__next__()
                 value = self.tree.__getitem__(key)
-                new_tree.__setitem__(key, value)
+                temp_tree.__setitem__(key, value)
             except:
                 break
         
-        self.tree = new_tree
+        self.tree = temp_tree
         
         self.commit()
         
+        # Replace old database with temporary database
         os.rename('temp.db', 'test.db')
         
 

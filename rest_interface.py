@@ -96,7 +96,7 @@ class SingleDocumentHandler(tornado.web.RequestHandler):
         
 # Applies map query to all documents
 class MapHandler(tornado.web.RequestHandler):
-    def get(self):
+    def post(self):
         os.remove('emit.db')
         
         mapreduce_script = Script()
@@ -132,9 +132,19 @@ class MapHandler(tornado.web.RequestHandler):
         db.close()
         temp_emit_db.close()
         
+# Show map query result
+class MapResultHandler(tornado.web.RequestHandler):
+    def get(self):
+        emit_db = Database('emit.db', max_size=4)
+        
+        for k, v in emit_db.items():
+            self.write(str(k) + ': ' + str(v) + '\n')
+            
+        emit_db.close()
+        
 # Applies reduce query to result of map querie
 class ReduceHandler(tornado.web.RequestHandler):
-    def get(self):
+    def post(self):
         os.remove('reduce.db')
         
         mapreduce_script = Script()
@@ -152,15 +162,26 @@ class ReduceHandler(tornado.web.RequestHandler):
             reduce_db[k] = str(reduced_value)
 
         reduce_db.commit()
-        
-        # Write/print keys and reduced results
-        genexp = ((k, reduce_db[k]) for k in sorted(reduce_db, key=reduce_db.get, reverse=True))
-        for k, v in genexp:
-            self.write(k.decode("utf-8") + ' : ' + str(v) + '\n')  
-
+             
         reduce_db.close()
         emit_db.close()
         
+# Show reduce query result
+class ReduceResultHandler(tornado.web.RequestHandler):
+    def get(self):
+        reduce_db = Database('reduce.db', max_size=4)
+        
+        genexp = ((k, reduce_db[k]) for k in sorted(reduce_db,
+                                                    key=reduce_db.get,
+                                                    reverse=True))
+        
+        for k, v in genexp:
+            self.write(k.decode("utf-8") + ' : ' +\
+                str(v.decode("utf-8")) + '\n') 
+            
+        reduce_db.close()
+
+# Compact the database
 class CompactionHandler(tornado.web.RequestHandler):    
     def get(self):
         db = Database('test.db', max_size=4)
@@ -185,7 +206,9 @@ application = tornado.web.Application([
     (r"/documents", DocumentsHandler),
     (r"/document/([0-9]+)", SingleDocumentHandler),
     (r"/documents/map", MapHandler),
+    (r"/documents/map/result", MapResultHandler),
     (r"/documents/reduce", ReduceHandler),
+    (r"/documents/reduce/result", ReduceResultHandler),
     (r"/documents/compaction", CompactionHandler),
     (r"/web/documents", WebDocumentsHandler)
 ])
