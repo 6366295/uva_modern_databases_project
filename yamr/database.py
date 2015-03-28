@@ -112,6 +112,7 @@ class Database(MutableMapping):
                 break
         
         self.tree = temp_tree
+        self.chunk = temp_chunk
         
         self.commit()
         
