@@ -1,5 +1,5 @@
 from random import randint, sample
-from chord import Node
+from node import Node
 
 node_ids = sample(range(Node.ring_size), 5)
 node_failures = 2
