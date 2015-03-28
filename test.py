@@ -1,8 +1,8 @@
 from random import randint, sample
 from chord import Node
 
-#node_ids = sample(range(Node.ring_size), 5)
-node_ids = [10,30]
+node_ids = sample(range(Node.ring_size), 5)
+#node_ids = [31, 24]
 node_failures = 2
 nodes = []
 
@@ -28,8 +28,8 @@ for node_id in node_ids:
         for node in nodes:
             node.stabilise()
 
-        #for node in nodes:
-        #    node.fix_fingers()
+        for node in nodes:
+            node.fix_fingers()
 
     print('Network:')
     
