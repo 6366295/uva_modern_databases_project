@@ -1,10 +1,11 @@
 from random import randint, sample
 from chord import Node
 
-#node_ids = sample(range(Node.ring_size), 2)
-node_ids = [10,11]
+#node_ids = sample(range(Node.ring_size), 5)
+node_ids = [10,30]
 node_failures = 2
 nodes = []
+
 
 for node_id in node_ids:
     print('Creating node with node ID: #{}.'.format(node_id))
@@ -22,15 +23,16 @@ for node_id in node_ids:
     node.join(known_node)
 
     print('Stabilising...')
-    
+
     for _ in range(Node.finger_count):
         for node in nodes:
             node.stabilise()
 
-        for node in nodes:
-            node.fix_fingers()
+        #for node in nodes:
+        #    node.fix_fingers()
 
     print('Network:')
     
     for node in nodes:
         node.print_fingers()
+
